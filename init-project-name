@@ -1,0 +1,11 @@
+#!/bin/bash
+
+####################################################
+# Commandline to initializ dockers container names #
+####################################################
+
+read -p 'Project name: ' PROJECT_NAME
+
+FILES=$(find ./docker -type f)
+
+sed -r -i -e  "s/<PROJECT_FOLDER>/$PROJECT_NAME/g" $FILES ./.env.dist ./.env ./docker-compose.yml
