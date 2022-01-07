@@ -2,42 +2,74 @@ version: '3'
 
 services:
     db:
-        image: mysql
         container_name: db
-        ports:
-            - ${MYSQL_PORT}:9001
+        build:
+            context: docker/${DB_IMAGE}
+            args:
+                DB_IMAGE_TAG: ${DB_IMAGE_TAG}
+                DB_NAME: ${DB_NAME}
+                DB_USER: ${DB_USER}
+                DB_PASSWORD: ${DB_PASSWORD}
         environment:
-            MYSQL_DB: ${MYSQL_DB}
-            MYSQL_USER: ${MYSQL_USER}
-            MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+            ${DB_PASSWORD_ENV_NAME}: ${DB_PASSWORD}
+        ports:
+            - ${DB_PORT}:${DB_PORT_CONTAINER}
+        volumes:
+            - ${DB_DATA}:${DB_DATA_CONTAINER}
 
     php:
         build:
-            context: docker/php7-fpm
+            context: docker/php
             args:
-              PHP_PROJECT_FOLDER: symfonyyy
-
+              PHP_VERSION: ${PHP_VERSION}
+              WORKDIR: ${PHP_VOLUME_CONTAINER}
         container_name: php
-        env_file: ./.env
         volumes:
-            - ${PWD}:/var/www/<PROJECT_FOLDER>
+            - ${PHP_VOLUME}:${PHP_VOLUME_CONTAINER}
+            - ../history/php.bash_history.txt:/root/.bash_history
         links:
             - db
+        ports:
+            - 9000:9000
 
     nginx:
+        container_name: nginx
         build:
             context: docker/nginx
             args:
-              PROJECT_FOLDER: test
-        container_name: nginx
-        env_file: ./.env
+                WORKDIR: ${PHP_VOLUME_CONTAINER}
         ports:
-            - $WEB_PORT:80
+            - 8080:8080
+            - 80:80
         links:
             - php
         volumes:
-            - ${PWD}:/var/www/<PROJECT_FOLDER>
+            - ${PHP_VOLUME}:${PHP_VOLUME_CONTAINER}
+            - ./docker/nginx/sites-enabled:/etc/nginx/sites-enabled
             - ${LOGS_DIR}/nginx/:/var/log/nginx
+
+    adminer:
+        container_name: adminer
+        depends_on:
+            - db
+        image: adminer
+        restart: always
+        ports:
+            - 8085:8080
+
+    phpmyadmin:
+        container_name: phpmyadmin
+        depends_on:
+            - db
+        image: phpmyadmin/phpmyadmin
+        restart: always
+        ports:
+            - '8086:80'
+        environment:
+            PMA_HOST: db
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            PMA_ARBITRARY: 1
+
 
 #    elk:
 #        container_name: nginx

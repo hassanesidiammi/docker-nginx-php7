@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###################################################
-# Commandline utility that make Docker usage easy #
+# Commandline utility that makes Docker usage easy #
 ###################################################
 
 # init project
@@ -13,8 +13,8 @@ init ()
     echo ""
 
     echo "----> Fix permission"
-    docker-compose exec -T php chmod 777 -R /var/www/<PROJECT_FOLDER>/var/cache
-    docker-compose exec -T php chmod 777 -R /var/www/<PROJECT_FOLDER>/var/logs
+    docker-compose exec -T php chmod 777 -R ${PHP_VOLUME}/var/cache
+    docker-compose exec -T php chmod 777 -R ${PHP_VOLUME}/var/logs
     echo "  [OK] Permission fixed"
 
     echo ""
@@ -51,6 +51,26 @@ start ()
 stop ()
 {
     docker-compose stop
+}
+
+# restart docker
+restart ()
+{
+    docker-compose down --remove-orphans
+    docker-compose up -d
+
+}
+
+# show docker containers
+ps ()
+{
+    docker-compose ps
+}
+
+# down docker containers
+down ()
+{
+    down --remove-orphans
 }
 
 # run bash
@@ -123,7 +143,7 @@ main ()
         exit 0
     fi
 
-    if [[ ! $1 =~ ^init|start|stop|bash|destroy|console|composer|exec|tests$ ]]; then
+    if [[ ! $1 =~ ^init|start|stop|bash|destroy|console|composer|exec|tests|ps$ ]]; then
         echo "$1 is not a supported command"
         exit 1
     fi

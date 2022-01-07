@@ -11,4 +11,4 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
 
 RUN apt-get update && apt-get install yarn
 
-WORKDIR /var/www/<PROJECT_FOLDER>
+WORKDIR /var/www/${PROJECT_FOLDER}
