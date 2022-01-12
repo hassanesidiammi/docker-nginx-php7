@@ -7,11 +7,9 @@ services:
             context: docker/${DB_IMAGE}
             args:
                 DB_IMAGE_TAG: ${DB_IMAGE_TAG}
-                DB_NAME: ${DB_NAME}
                 DB_USER: ${DB_USER}
                 DB_PASSWORD: ${DB_PASSWORD}
-        environment:
-            ${DB_PASSWORD_ENV_NAME}: ${DB_PASSWORD}
+                DB_NAME: ${DB_NAME}
         ports:
             - ${DB_PORT}:${DB_PORT_CONTAINER}
         volumes:
@@ -69,6 +67,43 @@ services:
             PMA_HOST: db
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
             PMA_ARBITRARY: 1
+
+    sonarqube:
+        container_name: sonarqube
+        build:
+            context: docker/sonarqube
+            args:
+                SONARQUBE_VERSION: ${SONARQUBE_VERSION}
+        depends_on:
+            - db
+        ports:
+            - "9000:9000"
+        environment:
+            SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+            SONAR_JDBC_USERNAME: postgres
+            SONAR_JDBC_PASSWORD: root
+        volumes:
+            - "../sonar/sonarqube_data:/opt/sonarqube/data"
+            - "../sonar/sonarqube_extensions:/opt/sonarqube/extensions"
+            - "../sonar/sonarqube_logs:/opt/sonarqube/logs"
+            - "../sonar/sonarqube_temp:/opt/sonarqube/temp"
+
+    sonarscanner:
+        container_name: sonarscanner
+        depends_on:
+            - sonarqube
+        image: sonarsource/sonar-scanner-cli
+
+        volumes:
+            - ${SONAR_PROJECT_DIR}:/usr/src
+            - ${SONAR_PROJECT_PROPERTIES_FILE}:/usr/config/sonar-project.properties
+
+        working_dir: /usr/src
+        command:
+            - 'sonar-scanner'
+            - '-X'
+            - '-Dproject.settings=../config/sonar-project.properties'
+            - '-Dsonar.working.directory=../../tmp'
 
 
 #    elk:
